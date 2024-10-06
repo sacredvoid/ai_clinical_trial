@@ -5,3 +5,4 @@ patient_data.db
 .env
 chromadb_*
 __pycache__
+patient_trials_matched
