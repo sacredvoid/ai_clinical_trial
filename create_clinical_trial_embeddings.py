@@ -25,17 +25,17 @@ def init():
     """Initialization of ChromaDB client, collection and embedding model
 
     Returns:
-        tuple: (collection, model)
+        tuple: (collection, collection, model)
     """
 # Initialize ChromaDB client and create a collection
     client = chromadb.PersistentClient(path="./chromadb_clinicaltrial")
-
-    collection = get_or_create_collection(client, "clinical_trials")
-
+    # Separate collections for inclusion and exclusion criteria
+    inclusion_collection = get_or_create_collection(client, "inclusion_criteria")
+    exclusion_collection = get_or_create_collection(client, "exclusion_criteria")
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    return collection, model
+    return inclusion_collection, exclusion_collection, model
 
-def embed_and_add_single_entry(collection, model, data, id, study_title):
+def embed_and_add_single_entry(collection, model, data, id, study_title=None):
     """As the name suggests, Embed input data, add to ChromaDB collection
 
     Args:
@@ -43,19 +43,21 @@ def embed_and_add_single_entry(collection, model, data, id, study_title):
         model (embedding model): The embedding model object
         data (str): The data to embed and store in chromadb
         id (str): ID of the data
-        study_title (str): Title study, in this case clinical trial
+        study_title (str, optional): Title study, in this case clinical trial
 
     Returns:
         None
     """
 # Sample data (embedding and metadata)
     embedding = model.encode(data, convert_to_tensor=False).tolist()
-    if id is not None:
+    if study_title is not None:
         metadata = {"trial_id": id, "study_title": study_title}
+    else:
+        metadata = {"patient_id": id}
 
-    # Add the trial embedding to the collection
     collection.upsert(
         embeddings=[embedding],
+        documents=[data],
         metadatas=[metadata],
         ids=[id]
     )
