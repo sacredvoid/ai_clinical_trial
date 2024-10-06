@@ -7,12 +7,12 @@ from datetime import datetime
 # This is later used to extract only those columns from those tables from the local SQLite DB.
 # Picked SQLite DB because the given data is relational, easier to load it into SQL-like over No-SQL.
 important_details_column_map = defaultdict()
-important_details_column_map['allergies'] = ['description','type','category','reaction1','description1','severity1','reaction2','description2','severity2']
-important_details_column_map['conditions'] = ['start','stop','description']
+important_details_column_map['allergies'] = ['description','type']
+important_details_column_map['conditions'] = ['description']
 important_details_column_map['immunizations'] = ['description']
-important_details_column_map['medications'] = ['start','stop','description','reasondescription']
+important_details_column_map['medications'] = ['stop','description']
 important_details_column_map['observations'] = ['category','description','value','units','type']
-important_details_column_map['procedures'] = ['start','stop','description','reasondescription']
+important_details_column_map['procedures'] = ['description']
 important_details_column_map['patients'] = ['birthdate','gender']
 
 
@@ -53,12 +53,26 @@ def get_patient_per_table_by_id(specific_table, p_id):
     specific_table_columns_to_select = important_details_column_map[specific_table]
     
     SELECT_TABLE_COLUMNS = ', '.join(map(lambda x: f'{"a."}{x}', specific_table_columns_to_select))
-    query_to_run = f"""
+    if specific_table == "observations":
+        query_to_run = f"""
+                SELECT {SELECT_TABLE_COLUMNS}
+                FROM patients p
+                LEFT JOIN 
+                    {specific_table} a ON p.id = a.patient
+                WHERE 
+                    p.id = '{p_id}'
+                    AND a.date = (SELECT MAX(date) 
+                                FROM {specific_table} 
+                                WHERE patient = '{p_id}');
+                """
+    else:
+        query_to_run = f"""
             SELECT {SELECT_TABLE_COLUMNS}
             FROM patients p
             LEFT JOIN {specific_table} a ON p.id = a.patient
-            WHERE p.id = '{p_id}';
-            """
+                        WHERE p.id = '{p_id}';
+        """
+        
     
     query_result = run_query(query_to_run)
     return query_result
@@ -146,7 +160,7 @@ def create_patient_profile(p_id):
             }
 
 def main():
-    print(create_patient_profile('b9c610cd-28a6-4636-ccb6-c7a0d2a4cb85'))
+    print(create_patient_profile('339144f8-50e1-633e-a013-f361391c4cff'))
 
 if __name__ == "__main__":
     main()
