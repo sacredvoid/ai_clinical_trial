@@ -10,9 +10,9 @@ This project implements a matching algorithm that takes patient data as input an
 - [x] Web scraper to fetch the latest ongoing trials - Store Trial Data as Vector Store in ChromaDB
 - [x] Preprocess all available patient data - Store into SQLite DB
 - [x] LLM Pipeline to Summarize given text - Connects to local/online LLM APIs
-- [ ] Matching Algorithm - Currently matching in the Vector Space. Need to enhance this.
+- [x] Matching Algorithm - 3 Stage Matching
 - [ ] Unit and Integration Tests
-- [ ] Documentation
+- [x] Documentation - Mostly done
 
 ## Setting up environment
 1. Create your virtual environment, either pip/conda.
