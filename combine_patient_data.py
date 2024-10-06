@@ -54,6 +54,15 @@ def get_patient_details(p_id):
     query_result = run_query(patient_query)
     return query_result
 
+def get_all_patient_ids():
+    patient_query = f"""
+            SELECT id
+            FROM patients;
+            """ 
+    
+    query_result = run_query(patient_query)
+    return query_result
+
 def calculate_age(date_string):
     # Example birthdate (in standard Python date format)
     birthdate = datetime.strptime(date_string, "%Y-%m-%d")
