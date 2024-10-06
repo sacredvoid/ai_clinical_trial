@@ -10,6 +10,16 @@ from tqdm import tqdm
 from create_clinical_trial_embeddings import init, embed_and_add_single_entry, check_id_exists
 
 async def extract_nct_ids(crawler, trials_per_page=25, page_number=1):
+    """This function handles scraping the Trial ID 'NCT_ID' from the clinicaltrials.gov website
+
+    Args:
+        crawler (AsyncWebCrawler): An instance of AsyncWebCrawler that crawls the webpages
+        trials_per_page (int, optional): The number of trials to be listed on the page (pagination). Defaults to 25.
+        page_number (int, optional): The page number to fetch the Trial IDs from.
+
+    Returns:
+        _type_: _description_
+    """    
     # Define the extraction schema
     schema = {
         "name": "Clinical Trial NCT IDs",
@@ -50,6 +60,16 @@ async def extract_nct_ids(crawler, trials_per_page=25, page_number=1):
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 async def get_trial_details_by_id(crawler, trial_id):
+    """This function handles scraping the Trial Details from the clinicaltrials.gov/study/{Trial ID} website
+        regarding it's various criteras.
+
+    Args:
+        crawler (AsyncWebCrawler): An instance of AsyncWebCrawler that crawls the webpages
+        trial_id (str): The trial ID details to be fetched
+
+    Returns:
+        json : Returns a json of parsed website, containing Study Overview and Participation Criteria as fields.
+    """    
     
     trial_page_schema = {
         "name": "Clinical Trial Data",
@@ -90,16 +110,15 @@ async def get_trial_details_by_id(crawler, trial_id):
     except Exception as e:
         pass
 
-def write_to_json(filename, data):
-    save_dir = './clinical_trial_data'
-    os.makedirs(save_dir, exist_ok=True)
-    file_save_path = os.path.join(save_dir, filename)
-
-    with open(file_save_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-    # print(f"Written file {file_save_path}")
-
 def extract_title(data):
+    """Extract the title from a given string using Regular Expression. 
+
+    Args:
+        data (str): Input data
+
+    Returns:
+        str: Extracted title
+    """
     match = re.search(r'Official Title(.*)Conditions', data)
     if match:
         official_title = match.group(1).strip()
@@ -110,6 +129,14 @@ def extract_title(data):
         return data
 
 def extract_inclusion_criteria(data):
+    """Extract the Inclusion Criteria from a given string using Regular Expression. 
+
+    Args:
+        data (str): Input data
+
+    Returns:
+        str: Extracted criteria
+    """
     inclusion_match = re.search(r'Inclusion Criteria:(.*)Exclusion Criteria:', data, re.DOTALL)
     if inclusion_match:
         inclusion_criteria = inclusion_match.group(1).strip()
@@ -119,6 +146,14 @@ def extract_inclusion_criteria(data):
         return data
     
 def extract_exclusion_criteria(data):
+    """Extract the Exclusion Criteria from a given string using Regular Expression. 
+
+    Args:
+        data (str): Input data
+
+    Returns:
+        str: Extracted criteria
+    """
     exclusion_match = re.search(r'Exclusion Criteria:(.*)', data, re.DOTALL)
     if exclusion_match:
         exclusion_criteria = exclusion_match.group(1).strip()
@@ -129,13 +164,18 @@ def extract_exclusion_criteria(data):
 
 
 async def main():
-    max_pages = 16
-    trials_per_page = 50
+    """
+    The main method helps scrape the given number of pages from the clinicaltrials.gov website
+    This then fetches latest trials and extracts key info and puts it in a vector store,
+    in this case a chromadb local persistent storage file.
+    """
+    max_pages = 16 # Change it how many ever needed
+    trials_per_page = 50 # Change it how many ever needed
     total_trials_to_scrape = ((max_pages-1)*trials_per_page)
     collection, embedding_model = init()
     failed_list = []
     async with AsyncWebCrawler(verbose=False) as crawler:
-        page_number = 1
+        page_number = 1 # Start crawling from page 1
         with tqdm(total=total_trials_to_scrape, desc='Clinical Trials Scraped: ') as pbar:
             while page_number<max_pages:
                 # Get the currently recruiting Trial IDs
@@ -152,6 +192,7 @@ async def main():
                     trial_page_details = await get_trial_details_by_id(crawler, id)
                     if trial_page_details is None: 
                         pbar.update(1)
+                        # Keep track of failed trial scrapes
                         failed_list.append(id)
                         continue
                     study_title = extract_title(trial_page_details["Study Overview"])
