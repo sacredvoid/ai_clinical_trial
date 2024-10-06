@@ -172,7 +172,7 @@ async def main():
     max_pages = 16 # Change it how many ever needed
     trials_per_page = 50 # Change it how many ever needed
     total_trials_to_scrape = ((max_pages-1)*trials_per_page)
-    collection, embedding_model = init()
+    inclusion_collection, exclusion_collection, embedding_model = init()
     failed_list = []
     async with AsyncWebCrawler(verbose=False) as crawler:
         page_number = 1 # Start crawling from page 1
@@ -185,7 +185,7 @@ async def main():
 
                 for id in trial_ids_set:
                     # Check if ID exists already, if yes, skip:
-                    if check_id_exists(collection, id): 
+                    if check_id_exists(inclusion_collection, id): 
                         # print(id," exists", end='\r')
                         pbar.update(1)
                         continue
@@ -196,17 +196,22 @@ async def main():
                         failed_list.append(id)
                         continue
                     study_title = extract_title(trial_page_details["Study Overview"])
+                    # Excluding the exclusion criteria, because I don't want to match keywords (vectors) 
+                    # present in the patient's summary with exclusion criteria. My idea is to 
+                    # only get list of trials that match inclusion criteria with the patient and then ask an LLM
+                    # to 
                     inclusion_criteria = extract_inclusion_criteria(trial_page_details["Participation Criteria"])
                     exclusion_criteria = extract_exclusion_criteria(trial_page_details["Participation Criteria"])
                     
-                    data_to_embed = f'Inclusion Criteria: {inclusion_criteria}, Exclusion Criteria: {exclusion_criteria}'
-                    embed_and_add_single_entry(collection, embedding_model, data_to_embed, id, study_title)
+                    # data_to_embed = f'Inclusion Criteria: {inclusion_criteria}, Exclusion Criteria: {exclusion_criteria}'
+                    embed_and_add_single_entry(inclusion_collection, embedding_model, inclusion_criteria, id, study_title)
+                    embed_and_add_single_entry(exclusion_collection, embedding_model, exclusion_criteria, id, study_title)
                     pbar.update(1)
                 
                 page_number+=1
 
     print(f"Finished scraping {total_trials_to_scrape} Clinical Trials. Added them to a local ChromaDB Vector Store")
     print(f"Here is a list trials that failed during scraping: ", failed_list)
-    print(f"Total number of records in ChromaDB: ", collection.count())         
+    print(f"Total number of records in ChromaDB: ", inclusion_collection.count())         
 
 asyncio.run(main())
