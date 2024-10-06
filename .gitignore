@@ -4,3 +4,4 @@ patient_data.db
 *_key
 .env
 chromadb_*
+__pycache__
