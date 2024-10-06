@@ -4,6 +4,16 @@ from dotenv import load_dotenv
 import os
 
 def summarize(info, model="meta-llama/llama-3.2-3b-instruct:free"):
+    """General function to summarize given data using LLM API
+
+    Args:
+        data (str): The input data to summarize
+        model (str, optional): The model to use. Defaults to "llama3.2-1b-medical-v1".
+        
+    Returns:
+        str : The output of the model from the api
+    """
+    
     load_dotenv('./.env')
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
