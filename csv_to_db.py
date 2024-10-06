@@ -2,6 +2,8 @@ import os
 from sqlalchemy import create_engine, inspect
 import pandas as pd
 
+# File contains code to convert the given patient CSV files into an RDB stored in local SQLite.
+
 # Create SQLAlchemy engine
 db_name = 'patient_data.db'
 engine = create_engine(f'sqlite:///{db_name}')

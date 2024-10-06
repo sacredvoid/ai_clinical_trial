@@ -3,6 +3,15 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
 def get_or_create_collection(client, collection_name):
+    """Helps to create a ChromaDB collection if it doesn't already exist
+
+    Args:
+        client (ChromaDB client): a chromaDB client
+        collection_name (str): Name of your ChromaDB collection
+
+    Returns:
+        chromadb.collection: the collection object
+    """
     # Check if the collection already exists
     existing_collections = client.list_collections()
     for collection in existing_collections:
@@ -13,6 +22,11 @@ def get_or_create_collection(client, collection_name):
     return client.create_collection(collection_name)
 
 def init():
+    """Initialization of ChromaDB client, collection and embedding model
+
+    Returns:
+        tuple: (collection, model)
+    """
 # Initialize ChromaDB client and create a collection
     client = chromadb.PersistentClient(path="./chromadb_clinicaltrial")
 
@@ -22,6 +36,18 @@ def init():
     return collection, model
 
 def embed_and_add_single_entry(collection, model, data, id, study_title):
+    """As the name suggests, Embed input data, add to ChromaDB collection
+
+    Args:
+        collection (chromadb.collection): ChromaDB collection object
+        model (embedding model): The embedding model object
+        data (str): The data to embed and store in chromadb
+        id (str): ID of the data
+        study_title (str): Title study, in this case clinical trial
+
+    Returns:
+        None
+    """
 # Sample data (embedding and metadata)
     embedding = model.encode(data, convert_to_tensor=False).tolist()
     if id is not None:
@@ -39,10 +65,28 @@ def embed_and_add_single_entry(collection, model, data, id, study_title):
     #     print(f"Failed to add trial ID: {id}. Response: {response}")
 
 def check_id_exists(collection, id_to_check):
+    """Checks if an item already exists given it's ID
+
+    Args:
+        collection (chromadb.collection): collection object
+        id_to_check (str): the ID to check if it exists
+
+    Returns:
+       bool: True/False depending on whether ID exists
+    """
     result = collection.get(ids=[id_to_check])
     return len(result['ids']) > 0
 
 def embed_and_add_multiple_entry(data):
+    """Function to add multiple entries, requires data to be in a dict, key as ID and value containing data
+    of the clinical trial
+
+    Args:
+        data (dict): Dictionary of data
+    
+    Returns:
+        None
+    """
     collection, embedding_model = init()
     if isinstance(data, dict):
         for key, value in tqdm(data.items(), desc="Processing Trials: "):
