@@ -33,6 +33,15 @@ This project implements a matching algorithm that takes patient data as input an
 3. The output of the LLM is varying, even after prompt engineering and referring to the prompt used in the [research paper](https://arxiv.org/pdf/2402.05125). The model is also 3B params, the paper used GPT4 which is very huge. Having access to larger models will make the process of matching more efficient.
 4. Did not have time to add tests, this was one of the biggest take-home assessments I've ever done and very rewarding as I got to learn a lot.
 
+## Future Improvements
+1. Use a bigger and better LLM, like GPT-4, o1, Llama 3.2 70b etc to get better analysis. Also checkout Medical Finetuned LLMs and see how they perform.
+2. Use keyword extractors on patient data and clinical trial data and then create embeddings.
+3. Use a bigger and better embedding model. Currently using the smallest and best that could run on my system.
+4. Think of a better way to pick the best trials based on inclusion/exclusion criteria's embeddings. Currently using a combination of min distance to inclusion criteria and max distance to exclusion criteria (equal weightage). Maybe play around with that to get better results.
+5. Finetune your own LLM model, unsure if data is readily available.
+6. Prompt engineering works better for bigger models, I tried it for Llama 3.2 1B-instruct, and it did really well!
+7. Add tests wherever possible, make some modules and pipelines better.
+
 ## Components
 ### Patient Data CSVs to SQLite RDB
 Run `python csv_to_db.py`. Here's what it does:
