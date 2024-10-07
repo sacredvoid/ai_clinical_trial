@@ -1,6 +1,6 @@
 ﻿# AI Based Clinical-Trial Matching
 
-Project done as a take-home assessment for Turmerik.
+Project done as a take-home assessment for [Turmerik](https://www.turmerik.xyz/) by Samanvya Tripathi.
 
 ## Project Overview
 
