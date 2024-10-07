@@ -83,8 +83,6 @@ This script performs the following main tasks:
 
 The script is configured to scrape a specified number of pages and trials per page. It then processes this data and stores it in a local ChromaDB vector store for further analysis or retrieval.
 
-Your code implements a matching algorithm that identifies clinical trials suitable for patients based on their health profiles and trial inclusion/exclusion criteria. Here’s a summary focusing on the matching algorithm:
-
 ### Summary of the Matching Algorithm
 
 1. **Patient Profile Creation**: 
