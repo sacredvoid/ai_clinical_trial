@@ -39,7 +39,7 @@ This project implements a matching algorithm that takes patient data as input an
 3. Use a bigger and better embedding model. Currently using the smallest and best that could run on my system.
 4. Think of a better way to pick the best trials based on inclusion/exclusion criteria's embeddings. Currently using a combination of min distance to inclusion criteria and max distance to exclusion criteria (equal weightage). Maybe play around with that to get better results.
 5. Finetune your own LLM model, unsure if data is readily available.
-6. Prompt engineering works better for bigger models, I tried it for Llama 3.2 1B-instruct, and it did really well!
+6. Prompt engineering works better for bigger models, I tried it for Llama 3.2 3B-instruct, and it did really well!
 7. Add tests wherever possible, make some modules and pipelines better.
 
 ## Components
