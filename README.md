@@ -1,7 +1,5 @@
 ﻿# AI Based Clinical-Trial Matching
 
-Project done as a take-home assessment for [Turmerik](https://www.turmerik.xyz/) by Samanvya Tripathi.
-
 ## Project Overview
 
 This project implements a matching algorithm that takes patient data as input and outputs a list of clinical trials that each patient is eligible for. The algorithm considers various patient attributes and compares them against the inclusion and exclusion criteria of active clinical trials.
