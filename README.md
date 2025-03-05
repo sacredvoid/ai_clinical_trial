@@ -1,122 +1,220 @@
-﻿# AI Based Clinical-Trial Matching
-
-Project done as a take-home assessment for Turmerik.
+﻿﻿# AI-Based Clinical Trial Matching System
 
 ## Project Overview
 
-This project implements a matching algorithm that takes patient data as input and outputs a list of clinical trials that each patient is eligible for. The algorithm considers various patient attributes and compares them against the inclusion and exclusion criteria of active clinical trials.
+This project implements an advanced AI-powered system for matching patients with suitable clinical trials. By leveraging natural language processing, vector embeddings, and machine learning techniques, the system analyzes patient medical records and compares them against inclusion and exclusion criteria of active clinical trials to identify potential matches. This tool aims to streamline the clinical trial enrollment process, helping researchers, healthcare professionals, and patients find relevant trials more efficiently.
 
-## Feature Review
-- [x] Web scraper to fetch the latest ongoing trials - Store Trial Data as Vector Store in ChromaDB
-- [x] Preprocess all available patient data - Store into SQLite DB
-- [x] LLM Pipeline to Summarize given text - Connects to local/online LLM APIs
-- [x] Matching Algorithm - 3 Stage Matching
-- [x] Documentation
-- [x] JSON File Output 
-- [ ] Unit and Integration Tests
-- [ ] Google Sheet file output
+## Core Architecture
 
+The system employs a multi-stage pipeline architecture:
 
-## Setting up environment
-1. Create your virtual environment, either pip/conda.
-2. Run `pip install -r requirements.txt` or `conda env create -f environment.yml`
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │     │                 │
+│  Data Ingestion │────▶│  Data Processing│────▶│ Vector Embedding│────▶│ Matching Engine │
+│                 │     │                 │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                       │                       │                       │
+        ▼                       ▼                       ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │     │                 │
+│ Clinical Trials │     │  Patient Data   │     │ ChromaDB Vector │     │ JSON Results    │
+│    Web Scraper  │     │  SQLite Database│     │     Store       │     │                 │
+│                 │     │                 │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘     └─────────────────┘
+```
 
-## Steps to run
-1. Get a Huggingface API Key. Store it in a `.env` file as `HUGGINGFACE_KEY={yourkey}`. All other keys will be stored here for use in LLM APIs.
-2. Download the sample data from [here](https://mitre.box.com/shared/static/aw9po06ypfb9hrau4jamtvtz0e5ziucz.zip) and move it to the github repo's root directory. Rename dir to `patient_data` which contains all .csv files.
-3. Run `python main.py`. This should setup the patients SQLite DB, scrape clinical trials and store in ChromaDB, run the matching algorithm and store it in a dir as JSONs for each patient.
-4. Feel free to edit limits (in `find_matching_trial.py`) set since the number of patients, trials are into thousands, I run it for a small sample of them.
+## Key Components
 
-## Limitations
-1. LLM API Rate Limits
-2. Did not use all the columns like dates of patient data due to the context window of the free LLM used (LLama 3.2 3B-Instruct) under 4096 tokens. Having more information for the LLM like dates is important in a lot of the clinical trials.
-3. The output of the LLM is varying, even after prompt engineering and referring to the prompt used in the [research paper](https://arxiv.org/pdf/2402.05125). The model is also 3B params, the paper used GPT4 which is very huge. Having access to larger models will make the process of matching more efficient.
-4. Did not have time to add tests, this was one of the biggest take-home assessments I've ever done and very rewarding as I got to learn a lot.
+### 1. Data Ingestion & Storage
+
+#### Patient Data Processing (`csv_to_db.py`)
+- Converts patient CSV files into a structured SQLite relational database
+- Cleans and normalizes column names for consistency
+- Creates tables for different types of patient data (allergies, conditions, medications, etc.)
+- Provides a queryable foundation for patient information
+
+#### Clinical Trial Web Scraper (`web_scraper_trials.py`)
+- Asynchronously scrapes clinical trial data from clinicaltrials.gov
+- Extracts NCT IDs, titles, inclusion criteria, and exclusion criteria
+- Implements pagination handling, retry mechanisms, and progress tracking
+- Stores processed trial data in ChromaDB for vector similarity searching
+
+### 2. Data Processing & Summarization
+
+#### Patient Profile Creation (`combine_patient_data.py`)
+- Consolidates patient information from multiple database tables
+- Creates comprehensive patient profiles with relevant medical history
+- Calculates patient age and formats data for LLM processing
+- Provides a unified view of each patient's health status
+
+#### LLM Summarization Pipeline (`summarize_apis/`)
+- Connects to language model APIs (Hugging Face, OpenRouter)
+- Summarizes complex patient data into concise, structured profiles
+- Processes clinical trial criteria for better matching
+- Supports multiple LLM providers with a consistent interface
+
+### 3. Vector Embedding & Storage
+
+#### Embedding Generation (`create_clinical_trial_embeddings.py`)
+- Creates vector embeddings for patient profiles and clinical trial criteria
+- Uses SentenceTransformer models for semantic representation
+- Maintains separate collections for inclusion and exclusion criteria
+- Enables efficient similarity searching and comparison
+
+### 4. Matching Algorithm (`find_matching_trial.py`)
+
+The matching process employs a sophisticated 3-stage algorithm:
+
+1. **Vector Similarity Search**:
+   - Embeds patient profiles using SentenceTransformer
+   - Calculates cosine similarity between patient embeddings and trial criteria embeddings
+   - Scores trials based on similarity to inclusion criteria and dissimilarity to exclusion criteria
+   - Filters trials with scores above a defined threshold
+
+2. **Expert LLM Assessment**:
+   - For top-scoring trials, performs detailed eligibility analysis using LLM
+   - Evaluates patient data against specific inclusion/exclusion criteria
+   - Generates eligibility scores and detailed reasoning
+   - Provides human-readable explanations for match quality
+
+3. **Result Generation**:
+   - Compiles matching trials and their assessments into structured JSON format
+   - Includes trial IDs, names, and detailed eligibility criteria matches
+   - Saves results for each patient for further analysis or integration
+
+## Technical Implementation Details
+
+### Data Flow
+
+1. Patient data from CSV files is processed and stored in a SQLite database
+2. Clinical trial data is scraped from clinicaltrials.gov and stored in ChromaDB
+3. Patient profiles are created by querying the SQLite database
+4. LLM summarizes patient profiles and trial criteria
+5. Vector embeddings are generated for patient profiles and trial criteria
+6. The matching algorithm identifies suitable trials for each patient
+7. Results are saved as JSON files
+
+### Key Technologies
+
+- **Database**: SQLite with SQLAlchemy ORM
+- **Web Scraping**: AsyncWebCrawler with retry mechanisms
+- **Vector Database**: ChromaDB for efficient similarity searching
+- **Embeddings**: SentenceTransformer (all-MiniLM-L6-v2)
+- **Language Models**: Llama 3.2 3B-Instruct via Hugging Face/OpenRouter APIs
+- **Data Processing**: Pandas for CSV handling and data manipulation
+- **Asynchronous Processing**: Python asyncio for concurrent operations
+
+## Features
+
+- [x] **Web Scraper**: Fetches the latest ongoing clinical trials from clinicaltrials.gov and stores them as vector embeddings in ChromaDB
+- [x] **Patient Data Preprocessing**: Converts CSV files into a structured SQLite database for efficient querying
+- [x] **LLM Pipeline for Summarization**: Connects to local or online LLM APIs to summarize patient data and trial criteria
+- [x] **Matching Algorithm**: Implements a 3-stage matching process combining vector similarity, LLM assessment, and threshold filtering
+- [x] **Documentation**: Provides comprehensive documentation of the system architecture and components
+- [x] **JSON File Output**: Generates structured output files containing matching trials and eligibility assessments
+- [ ] **Unit and Integration Tests**: Test suite for ensuring reliability and accuracy
+- [ ] **Google Sheet Output**: Export functionality for collaborative review
+
+## Setting Up the Environment
+
+1. **Create a virtual environment:**
+
+   **Using pip:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Linux or macOS
+   venv\Scripts\activate  # On Windows
+   ```
+
+   **Using conda:**
+   ```bash
+   conda create -n myenv python=3.9
+   conda activate myenv
+   ```
+
+2. **Install dependencies:**
+
+   **Using pip:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   **Using conda:**
+   ```bash
+   conda env create -f environment.yml
+   conda activate myenv
+   ```
+
+## Running the System
+
+1. **Obtain API Keys:**
+   - Get a Hugging Face API key from [huggingface.co](https://huggingface.co/)
+   - Store it in a `.env` file as `HUGGINGFACE_KEY={yourkey}`
+   - Alternatively, you can use OpenRouter by obtaining a key and setting `OPENROUTER_KEY={yourkey}`
+
+2. **Prepare Sample Data:**
+   - Download sample patient data from [here](https://mitre.box.com/shared/static/aw9po06ypfb9hrau4jamtvtz0e5ziucz.zip)
+   - Extract to the project root directory and rename to `patient_data`
+
+3. **Run the Main Script:**
+   ```bash
+   python main.py
+   ```
+   This will:
+   - Set up the patient SQLite database
+   - Scrape clinical trials and store them in ChromaDB
+   - Run the matching algorithm
+   - Save results as JSON files in `patient_trials_matched/`
+
+4. **Adjust Processing Parameters (Optional):**
+   - Modify `find_matching_trial.py` to change the number of patients processed
+   - Update `web_scraper_trials.py` to adjust the number of trials scraped
+
+## Technical Limitations
+
+1. **LLM API Rate Limits:**
+   The system relies on external LLM APIs which have rate limits. This restricts the number of patients and trials that can be processed in a given time period. Consider using paid API plans or implementing caching mechanisms for production use.
+
+2. **Context Window Constraints:**
+   The Llama 3.2 3B-Instruct model has a context window of 4096 tokens, limiting the amount of patient data and trial information that can be processed simultaneously. This may affect the comprehensiveness of the analysis, particularly for complex medical histories or detailed trial criteria.
+
+3. **LLM Output Variability:**
+   Despite prompt engineering, LLM outputs can vary, affecting the consistency of matching results. This variability is inherent to current language models and can impact the reliability of the eligibility assessments.
+
+4. **Embedding Model Limitations:**
+   The system uses a relatively small embedding model (all-MiniLM-L6-v2) which, while efficient, may not capture all the nuances of medical terminology and relationships compared to larger domain-specific models.
 
 ## Future Improvements
-1. Use a bigger and better LLM, like GPT-4, o1, Llama 3.2 70b etc to get better analysis. Also checkout Medical Finetuned LLMs and see how they perform.
-2. Use keyword extractors on patient data and clinical trial data and then create embeddings.
-3. Use a bigger and better embedding model. Currently using the smallest and best that could run on my system.
-4. Think of a better way to pick the best trials based on inclusion/exclusion criteria's embeddings. Currently using a combination of min distance to inclusion criteria and max distance to exclusion criteria (equal weightage). Maybe play around with that to get better results.
-5. Finetune your own LLM model, unsure if data is readily available.
-6. Prompt engineering works better for bigger models, I tried it for Llama 3.2 3B-instruct, and it did really well!
-7. Add tests wherever possible, make some modules and pipelines better.
 
-## Components
-### Patient Data CSVs to SQLite RDB
-Run `python csv_to_db.py`. Here's what it does:
-1. Creates a SQLite database named 'patient_data.db' using SQLAlchemy.
-2. Processes CSV files from a directory named 'patient_data':
-    - Reads each CSV file using pandas.
-    - Cleans column names by converting to lowercase and replacing spaces and hyphens with underscores.
-    - Creates a table in the SQLite database for each CSV file, using the filename (without extension) as the table name.
-    - Imports the data from each CSV into its corresponding table.
+1. **Enhanced LLM Integration:**
+   - Implement larger models like GPT-4, Claude 3 Opus, or Llama 3.2 70B for more accurate analysis
+   - Explore medical domain-specific fine-tuned models for improved understanding of clinical terminology
 
-3. Prints confirmation messages for each imported file.
-4. After importing all files, it uses SQLAlchemy's inspect function to print the structure of each table in the database, showing column names and their data types.
+2. **Advanced Embedding Techniques:**
+   - Implement keyword extraction before embedding generation
+   - Use larger, medical domain-specific embedding models
+   - Explore hybrid retrieval approaches combining sparse and dense embeddings
 
-### Web Scraper - Clinical Trials
-Run `python web_scraper_trials.py`. Here's why:<br>
-This script performs the following main tasks:
+3. **Refined Matching Algorithm:**
+   - Optimize the weighting between inclusion and exclusion criteria similarity
+   - Implement more sophisticated scoring mechanisms that account for the importance of different criteria
+   - Develop a feedback loop to improve matching accuracy over time
 
-1. **Web Scraping**: 
-   - Scrapes clinical trial data from clinicaltrials.gov
-   - Extracts NCT IDs and trial details
+4. **System Robustness:**
+   - Add comprehensive test suite for all components
+   - Implement caching and rate-limiting strategies for API calls
+   - Develop monitoring and logging for production deployment
 
-2. **Data Processing**:
-   - Extracts specific information like title, inclusion, and exclusion criteria
-   - Uses regular expressions for text extraction
+5. **User Interface:**
+   - Create a web interface for easier interaction with the system
+   - Implement visualization tools for match results
+   - Develop export functionality to various formats (CSV, Excel, Google Sheets)
 
-3. **Data Storage**:
-   - Stores processed data in a ChromaDB vector database
-   - Creates embeddings for efficient searching
-
-**Features**:
-
-- Asynchronous web crawling for improved performance
-- Pagination handling to scrape multiple pages
-- Retry mechanism for failed requests
-- Progress bar to track scraping progress
-- Checks for existing entries to avoid duplicates
-- Error handling and logging of failed scrapes
-
-
-The script is configured to scrape a specified number of pages and trials per page. It then processes this data and stores it in a local ChromaDB vector store for further analysis or retrieval.
-
-Your code implements a matching algorithm that identifies clinical trials suitable for patients based on their health profiles and trial inclusion/exclusion criteria. Here’s a summary focusing on the matching algorithm:
-
-### Summary of the Matching Algorithm
-
-1. **Patient Profile Creation**: 
-   - For each patient, the algorithm checks if a profile already exists in the database. If not, it creates a patient profile by summarizing relevant health information using an API call to a language model.
-
-2. **Embeddings Generation**: 
-   - The summarized patient profile is embedded using a pre-trained SentenceTransformer model. This embedding captures the essential features of the patient’s health data.
-
-3. **Similarity Calculation**: 
-   - The algorithm retrieves embeddings of clinical trials from two collections: one for inclusion criteria and another for exclusion criteria. 
-   - It calculates cosine similarity between the patient’s embedding and each trial’s inclusion and exclusion embeddings to evaluate how closely they match.
-
-4. **Scoring Trials**: 
-   - A score is computed for each trial based on the similarity of the inclusion and exclusion embeddings to the patient’s profile. 
-   - If the inclusion similarity is high and the exclusion similarity is low, the trial receives a positive score.
-
-5. **Threshold Filtering**: 
-   - Trials with a score above a defined threshold are considered potentially compatible. The top N trials are selected based on their scores.
-
-6. **Expert LLM Assessment**: 
-   - For each selected trial, the algorithm uses another language model to analyze the inclusion and exclusion criteria against the patient’s profile and generate a detailed eligibility assessment. 
-   - This includes determining the eligibility score (0-1) and providing reasoning based on the patient's health status.
-
-7. **Output**: 
-   - The matching trials and their eligibility assessments are compiled into a JSON format and saved for later use.
-
-### Key Points
-- The algorithm combines embeddings and similarity metrics to efficiently find matching trials.
-- It incorporates AI-driven summarization and eligibility assessment to refine the matching process.
-- The method is designed to be scalable while adhering to API rate limits by processing a limited number of patients at a time. 
-
-This structure allows for flexible and efficient querying of clinical trials based on personalized patient data.
+6. **Domain-Specific Customization:**
+   - Fine-tune models on medical literature and clinical trial data
+   - Implement specialized processing for different medical specialties
+   - Develop custom prompts for different types of clinical trials
 
 ## License
 
