@@ -1,4 +1,4 @@
-﻿﻿# AI-Based Clinical Trial Matching System
+﻿# AI-Based Clinical Trial Matching System
 
 ## Project Overview
 
